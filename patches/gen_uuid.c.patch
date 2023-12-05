@@ -1,0 +1,50 @@
+diff --git a/libuuid/src/gen_uuid.c b/libuuid/src/gen_uuid.c
+index 619ef0131..9a517d3d7 100644
+--- a/libuuid/src/gen_uuid.c
++++ b/libuuid/src/gen_uuid.c
+@@ -57,6 +57,7 @@
+ #include <sys/file.h>
+ #endif
+ #ifdef HAVE_SYS_IOCTL_H
++#define _OE_SOCKETS 1
+ #include <sys/ioctl.h>
+ #endif
+ #ifdef HAVE_SYS_SOCKET_H
+@@ -69,6 +70,7 @@
+ #include <sys/sockio.h>
+ #endif
+ #ifdef HAVE_NET_IF_H
++#include <sys/ioctl.h>
+ #include <net/if.h>
+ #endif
+ #ifdef HAVE_NETINET_IN_H
+@@ -252,15 +254,19 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
+ 	}
+ 	if (state_fd >= 0) {
+ 		rewind(state_f);
++#ifndef __MVS__
+ 		while (flock(state_fd, LOCK_EX) < 0) {
+ 			if ((errno == EAGAIN) || (errno == EINTR))
+ 				continue;
++#endif
+ 			fclose(state_f);
+ 			close(state_fd);
+ 			state_fd = -1;
+ 			ret = -1;
++#ifndef __MVS__
+ 			break;
+ 		}
++#endif
+ 	}
+ 	if (state_fd >= 0) {
+ 		unsigned int cl;
+@@ -333,7 +339,9 @@ try_again:
+ 			fflush(state_f);
+ 		}
+ 		rewind(state_f);
++#ifndef __MVS__
+ 		flock(state_fd, LOCK_UN);
++#endif
+ 	}
+ 
+ 	*clock_high = clock_reg >> 32;
