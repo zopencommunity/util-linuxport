@@ -1,5 +1,5 @@
 # bump: util-linux-version /UTILLINUX_VERSION="(.*)"/ https://github.com/util-linux/util-linux.git|semver:*
-UTILLINUX_VERSION="2.39.3"
+UTILLINUX_VERSION="2.40"
 
 export ZOPEN_BUILD_LINE="STABLE"
 export ZOPEN_STABLE_URL="https://github.com/util-linux/util-linux.git"
