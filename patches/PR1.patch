@@ -66,7 +66,7 @@ index d25ee2774..fe4bf2beb 100644
  static volatile locale_t c_locale;
  
 diff --git a/lib/strutils.c b/lib/strutils.c
-index 21751fd89..af4a672e3 100644
+index 6229a6e67..836256f2f 100644
 --- a/lib/strutils.c
 +++ b/lib/strutils.c
 @@ -14,6 +14,7 @@
@@ -78,10 +78,10 @@ index 21751fd89..af4a672e3 100644
  #include "c.h"
  #include "nls.h"
 diff --git a/lib/strv.c b/lib/strv.c
-index c306e3816..3a1f2b89b 100644
+index c306e3816..e003ab6a4 100644
 --- a/lib/strv.c
 +++ b/lib/strv.c
-@@ -24,6 +24,128 @@
+@@ -24,6 +24,123 @@
  #include "strutils.h"
  #include "strv.h"
  
@@ -115,50 +115,6 @@ index c306e3816..3a1f2b89b 100644
 +    return size;
 +}
 +
-+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-+    if (lineptr == NULL || n == NULL || stream == NULL) {
-+        return -1;  // Invalid arguments
-+    }
-+
-+    int c;
-+    size_t pos = 0;
-+
-+    // Ensure buffer is initialized
-+    if (*lineptr == NULL || *n == 0) {
-+        *n = 128;  // Initial buffer size
-+        *lineptr = (char *)malloc(*n);
-+        if (*lineptr == NULL) {
-+            return -1;  // Error in memory allocation
-+        }
-+    }
-+
-+    while ((c = fgetc(stream)) != EOF) {
-+        if (pos + 1 >= *n) {
-+            // Resize buffer if needed
-+            *n *= 2;  // Double the buffer size
-+            char *new_ptr = (char *)realloc(*lineptr, *n);
-+            if (new_ptr == NULL) {
-+                return -1;  // Error in memory reallocation
-+            }
-+            *lineptr = new_ptr;
-+        }
-+
-+        (*lineptr)[pos++] = (char)c;
-+
-+        if (c == '\n') {
-+            break;  // Stop reading at newline
-+        }
-+    }
-+
-+    if (pos == 0 && c == EOF) {
-+        return -1;  // No characters read, and EOF reached
-+    }
-+
-+    (*lineptr)[pos] = '\0';  // Null-terminate the string
-+
-+    return pos;
-+}
-+
 +int asprintf(char **strp, const char *format, ...) {
 +    va_list args;
 +    va_start(args, format);
@@ -182,6 +138,45 @@ index c306e3816..3a1f2b89b 100644
 +    va_end(args);
 +
 +    return length;
++}
++
++
++int dprintf(int fd, const char *format, ...) {
++    va_list args;
++    char *buffer;
++    int length, written;
++
++    // First, calculate the required length
++    va_start(args, format);
++    length = vsnprintf(NULL, 0, format, args); // Get the length of the formatted string
++    va_end(args);
++
++    if (length < 0) {
++        return -1;  // Return an error if formatting fails
++    }
++
++    buffer = (char *)malloc(length + 1);
++    if (!buffer) {
++        return -1;  // Return an error if memory allocation fails
++    }
++
++    // Format the string into the allocated buffer
++    va_start(args, format);
++    vsnprintf(buffer, length + 1, format, args);
++    va_end(args);
++
++    // Write the formatted string to the specified file descriptor
++    written = write(fd, buffer, length);
++
++    // Clean up
++    free(buffer);
++
++    // Check if the write operation was successful
++    if (written != length) {
++        return -1;  // Return an error if the write fails
++    }
++
++    return written;
 +}
 +
 +#include <stddef.h>

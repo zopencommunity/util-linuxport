@@ -1,0 +1,22 @@
+diff --git a/term-utils/Makemodule.am b/term-utils/Makemodule.am
+index 07004d43c..23bd198f9 100644
+--- a/term-utils/Makemodule.am
++++ b/term-utils/Makemodule.am
+@@ -7,7 +7,7 @@ script_SOURCES = term-utils/script.c \
+ 		 include/pty-session.h \
+ 		 lib/monotonic.c
+ script_CFLAGS = $(AM_CFLAGS) -Wno-format-y2k
+-script_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS) -lutil
++script_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS)
+ if HAVE_UTEMPTER
+ script_LDADD += -lutempter
+ endif
+@@ -38,7 +38,7 @@ scriptlive_SOURCES = term-utils/scriptlive.c \
+ 		       lib/pty-session.c \
+ 		       include/pty-session.h \
+ 		       lib/monotonic.c
+-scriptlive_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS) -lutil
++scriptlive_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS)
+ endif # BUILD_SCRIPTLIVE
+ 
+ 

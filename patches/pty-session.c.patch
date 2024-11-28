@@ -1,0 +1,205 @@
+diff --git a/lib/pty-session.c b/lib/pty-session.c
+index 384906547..03a589439 100644
+--- a/lib/pty-session.c
++++ b/lib/pty-session.c
+@@ -43,6 +43,85 @@ UL_DEBUG_DEFINE_MASKNAMES(ulpty) = UL_DEBUG_EMPTY_MASKNAMES;
+ #define UL_DEBUG_CURRENT_MASK   UL_DEBUG_MASK(ulpty)
+ #include "debugobj.h"
+ 
++
++#ifdef __MVS__
++
++static int signal_pipe[2] = {-1, -1};
++
++void sigHandler(int signo, siginfo_t *info, void *ucontext) {
++    struct signalfd_siginfo siginfo;
++
++    memset(&siginfo, 0, sizeof(struct signalfd_siginfo));
++    siginfo.ssi_signo = signo;
++    siginfo.ssi_code = info->si_code;
++    siginfo.ssi_pid = info->si_pid;
++    siginfo.ssi_uid = info->si_uid;
++    siginfo.ssi_errno = info->si_errno;
++    siginfo.ssi_status = info->si_status;
++    siginfo.ssi_band = info->si_band;
++
++
++    // Write the signal info to the pipe's write end
++    if (write(signal_pipe[1], &siginfo, sizeof(struct signalfd_siginfo)) == -1) {
++        perror("write");
++    }
++}
++
++int signalfd(int fd, const sigset_t *mask, int flags)
++{
++	if (pipe(signal_pipe) == -1) {
++                perror("pipe");
++                return -1;
++        }
++
++	if(flags & SFD_CLOEXEC)
++	{
++                // Set the FD_CLOEXEC flag on both ends of the pipe
++                if (fcntl(signal_pipe[0], F_SETFD, FD_CLOEXEC) == -1) {
++                        perror("fcntl(pipefd[0], FD_CLOEXEC)");
++			goto error;
++        	}
++        	if (fcntl(signal_pipe[1], F_SETFD, FD_CLOEXEC) == -1) {
++        		perror("fcntl(pipefd[1], FD_CLOEXEC)");
++			goto error;
++    		}
++	}
++	
++  
++       sigprocmask(SIG_UNBLOCK, mask, NULL);
++
++       struct sigaction sa;
++       memset(&sa, 0, sizeof(sa));
++       sa.sa_flags = SA_SIGINFO;   // Enable additional signal information
++       sa.sa_sigaction = sigHandler;  // Set our custom handler 
++	
++	for (int signo = 1; signo < 36; signo++) {
++                if (sigismember(mask, signo)) {
++    			
++                        if (sigaction(signo, &sa, NULL) == -1) {
++                        	perror("sigaction");
++			}
++                }
++        }
++
++        return signal_pipe[0];
++
++error:
++        signalfd_close(signal_pipe[0]);
++	return -1;
++
++}
++
++int signalfd_close(int fd)
++{
++    (void)fd;
++    if (signal_pipe[0] != -1) close(signal_pipe[0]);
++    if (signal_pipe[1] != -1) close(signal_pipe[1]);
++    signal_pipe[0] = signal_pipe[1] = -1;
++}
++
++#endif
++
+ void ul_pty_init_debug(int mask)
+ {
+ 	if (ulpty_debug_mask)
+@@ -149,7 +228,13 @@ void ul_pty_set_mainloop_time(struct ul_pty *pty, struct timeval *tv)
+ static void pty_signals_cleanup(struct ul_pty *pty)
+ {
+ 	if (pty->sigfd != -1)
++	{
++#ifndef __MVS__
+ 		close(pty->sigfd);
++#else
++		signalfd_close(pty->sigfd);
++#endif
++	}
+ 	pty->sigfd = -1;
+ 
+ 	/* restore original setting */
+@@ -182,7 +267,9 @@ int ul_pty_setup(struct ul_pty *pty)
+ 			attrs.c_lflag |= ECHO;
+ 		else
+ 			attrs.c_lflag &= ~ECHO;
+-
++#ifdef __MVS__
++		attrs.c_oflag |= OPOST | ONLCR;
++#endif
+ 		ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&pty->win);
+ 		/* create master+slave */
+ 		rc = openpty(&pty->master, &pty->slave, NULL, &attrs, &pty->win);
+@@ -206,6 +293,10 @@ int ul_pty_setup(struct ul_pty *pty)
+ 		else
+ 			attrs.c_lflag &= ~ECHO;
+ 
++#ifdef __MVS__
++		attrs.c_oflag |= OPOST | ONLCR;
++#endif
++
+ 		tcsetattr(pty->slave, TCSANOW, &attrs);
+ 	}
+ 
+@@ -282,6 +373,7 @@ int ul_pty_chownmod_slave(struct ul_pty *pty, uid_t uid, gid_t gid, mode_t mode)
+ 	return 0;
+ }
+ 
++
+ /* call me in child process */
+ void ul_pty_init_slave(struct ul_pty *pty)
+ {
+@@ -289,7 +381,9 @@ void ul_pty_init_slave(struct ul_pty *pty)
+ 
+ 	setsid();
+ 
++#ifndef __MVS__
+ 	ioctl(pty->slave, TIOCSCTTY, 1);
++#endif
+ 	close(pty->master);
+ 
+ 	dup2(pty->slave, STDIN_FILENO);
+@@ -299,8 +393,13 @@ void ul_pty_init_slave(struct ul_pty *pty)
+ 	close(pty->slave);
+ 
+ 	if (pty->sigfd >= 0)
++	{
++#ifndef __MVS__
+ 		close(pty->sigfd);
+-
++#else
++		signalfd_close(pty->sigfd);
++#endif
++	}
+ 	pty->slave = -1;
+ 	pty->master = -1;
+ 	pty->sigfd = -1;
+@@ -313,7 +412,6 @@ void ul_pty_init_slave(struct ul_pty *pty)
+ static int write_output(char *obuf, ssize_t bytes)
+ {
+ 	DBG(IO, ul_debug(" writing output"));
+-
+ 	if (write_all(STDOUT_FILENO, obuf, bytes)) {
+ 		DBG(IO, ul_debug("  writing output *failed*"));
+ 		return -errno;
+@@ -352,6 +450,7 @@ static int schedule_child_write(struct ul_pty *pty, char *buf, size_t bufsz, int
+  * The pty is usually faster than shell, so it's a good idea to wait until
+  * the previous message has been already read by shell from slave before we
+  * write to master. This is necessary especially for EOF situation when we can
++
+  * send EOF to master before shell is fully initialized, to workaround this
+  * problem we wait until slave is empty. For example:
+  *
+@@ -417,9 +516,13 @@ static int flush_child_buffers(struct ul_pty *pty, int *anything)
+ out:
+ 	/* without sync write_output() will write both input &
+ 	 * shell output that looks like double echoing */
+-	if (any)
++	if (any) {
++#ifndef __MVS__
+ 		fdatasync(pty->master);
+-
++#else
++		fsync(pty->master);
++#endif
++	}
+ 	if (anything)
+ 		*anything = any;
+ 	return rc;
+@@ -677,8 +780,13 @@ int ul_pty_proxy_master(struct ul_pty *pty)
+ 
+ 		/* error */
+ 		if (ret < 0) {
++#ifndef __MVS__
+ 			if (errsv == EAGAIN)
++#else
++			if (errsv == EAGAIN || errsv == EINTR)
++#endif
+ 				continue;
++
+ 			rc = -errno;
+ 			break;
+ 		}
