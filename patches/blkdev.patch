@@ -1,0 +1,20 @@
+diff --git a/lib/blkdev.c b/lib/blkdev.c
+index b10da99a2..a5612fa4a 100644
+--- a/lib/blkdev.c
++++ b/lib/blkdev.c
+@@ -379,6 +379,7 @@ int blkdev_lock(int fd, const char *devname, const char *lockmode)
+ {
+ 	int oper, rc, msg = 0;
+ 
++#ifndef __MVS__
+ 	if (!lockmode)
+ 		lockmode = getenv("LOCK_BLOCK_DEVICE");
+ 	if (!lockmode)
+@@ -421,6 +422,7 @@ int blkdev_lock(int fd, const char *devname, const char *lockmode)
+ 		}
+ 	} else if (msg)
+ 		fprintf(stderr, _("OK\n"));
++#endif
+ 	return rc;
+ }
+ 

@@ -1,5 +1,5 @@
 diff --git a/libuuid/src/gen_uuid.c b/libuuid/src/gen_uuid.c
-index 826cd2245..75c330c28 100644
+index 763abeb9e..84be897f9 100644
 --- a/libuuid/src/gen_uuid.c
 +++ b/libuuid/src/gen_uuid.c
 @@ -57,6 +57,7 @@
@@ -18,8 +18,8 @@ index 826cd2245..75c330c28 100644
  #include <net/if.h>
  #endif
  #ifdef HAVE_NETINET_IN_H
-@@ -251,15 +253,19 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
- 	}
+@@ -269,15 +271,19 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
+ 
  	if (state_fd >= 0) {
  		rewind(state_f);
 +#ifndef __MVS__
@@ -29,16 +29,16 @@ index 826cd2245..75c330c28 100644
 +#endif
  			fclose(state_f);
  			close(state_fd);
- 			state_fd = -1;
+ 			state_fd = STATE_FD_ERROR;
  			ret = -1;
 +#ifndef __MVS__
  			break;
  		}
 +#endif
- 	}
- 	if (state_fd >= 0) {
- 		unsigned int cl;
-@@ -328,7 +334,9 @@ try_again:
+ 	} else
+ 		ret = -1;
+ 
+@@ -348,7 +354,9 @@ try_again:
  			      clock_seq, (long)last.tv_sec, (long)last.tv_usec, adjustment);
  		fflush(state_f);
  		rewind(state_f);

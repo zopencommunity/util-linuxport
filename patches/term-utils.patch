@@ -1,0 +1,65 @@
+diff --git a/term-utils/Makemodule.am b/term-utils/Makemodule.am
+index a0ebd077e..46cdf5a28 100644
+--- a/term-utils/Makemodule.am
++++ b/term-utils/Makemodule.am
+@@ -7,7 +7,7 @@ script_SOURCES = term-utils/script.c \
+ 		 include/pty-session.h \
+ 		 lib/monotonic.c
+ script_CFLAGS = $(AM_CFLAGS) -Wno-format-y2k
+-script_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS) -lutil
++script_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS)
+ if HAVE_UTEMPTER
+ script_LDADD += -lutempter
+ endif
+@@ -38,7 +38,7 @@ scriptlive_SOURCES = term-utils/scriptlive.c \
+ 		       lib/pty-session.c \
+ 		       include/pty-session.h \
+ 		       lib/monotonic.c
+-scriptlive_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS) -lutil
++scriptlive_LDADD = $(LDADD) libcommon.la $(MATH_LIBS) $(REALTIME_LIBS)
+ endif # BUILD_SCRIPTLIVE
+ 
+ 
+diff --git a/term-utils/scriptlive.c b/term-utils/scriptlive.c
+index e4a3434ed..d4004357b 100644
+--- a/term-utils/scriptlive.c
++++ b/term-utils/scriptlive.c
+@@ -130,7 +130,11 @@ static int process_next_step(struct scriptlive *ss)
+ 
+ 		/* no delay -- immediately write */
+ 		rc = replay_emit_step_data(ss->setup, ss->step, fd);
++#ifndef __MVS__
+ 		fdatasync(fd);
++#else
++		fsync(fd);
++#endif
+ 	} while (rc == 0);
+ 
+ 	return rc;
+@@ -146,7 +150,11 @@ static int mainloop_cb(void *data)
+ 		int fd = ul_pty_get_childfd(ss->pty);;
+ 
+ 		rc = replay_emit_step_data(ss->setup, ss->step, fd);
+-		fdatasync(fd);
++#ifndef __MVS__
++                fdatasync(fd);
++#else
++                fsync(fd);
++#endif
+ 		if (rc)
+ 			return rc;
+ 	}
+diff --git a/text-utils/hexdump.c b/text-utils/hexdump.c
+index 36744554e..15fc7f06f 100644
+--- a/text-utils/hexdump.c
++++ b/text-utils/hexdump.c
+@@ -41,7 +41,9 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
++#ifndef __MVS__
+ #include <err.h>
++#endif
+ #include <limits.h>
+ #include <getopt.h>
+ #include "hexdump.h"
