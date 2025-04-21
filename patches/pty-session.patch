@@ -1,5 +1,17 @@
+diff --git a/include/pty-session.h b/include/pty-session.h
+index af54197b3..ff12af9ae 100644
+--- a/include/pty-session.h
++++ b/include/pty-session.h
+@@ -16,6 +16,7 @@
+ 
+ #include <sys/signalfd.h>
+ 
++#include <sys/ioctl.h>
+ /*
+  * Callbacks -- the first argument is always callback data, see
+  * ul_pty_set_callback_data().
 diff --git a/lib/pty-session.c b/lib/pty-session.c
-index 384906547..03a589439 100644
+index 815264d1a..b9bda0c70 100644
 --- a/lib/pty-session.c
 +++ b/lib/pty-session.c
 @@ -43,6 +43,85 @@ UL_DEBUG_DEFINE_MASKNAMES(ulpty) = UL_DEBUG_EMPTY_MASKNAMES;
@@ -124,7 +136,7 @@ index 384906547..03a589439 100644
  		tcsetattr(pty->slave, TCSANOW, &attrs);
  	}
  
-@@ -282,6 +373,7 @@ int ul_pty_chownmod_slave(struct ul_pty *pty, uid_t uid, gid_t gid, mode_t mode)
+@@ -283,6 +374,7 @@ int ul_pty_chownmod_slave(struct ul_pty *pty, uid_t uid, gid_t gid, mode_t mode)
  	return 0;
  }
  
@@ -132,7 +144,7 @@ index 384906547..03a589439 100644
  /* call me in child process */
  void ul_pty_init_slave(struct ul_pty *pty)
  {
-@@ -289,7 +381,9 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -290,7 +382,9 @@ void ul_pty_init_slave(struct ul_pty *pty)
  
  	setsid();
  
@@ -142,7 +154,7 @@ index 384906547..03a589439 100644
  	close(pty->master);
  
  	dup2(pty->slave, STDIN_FILENO);
-@@ -299,8 +393,13 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -300,8 +394,13 @@ void ul_pty_init_slave(struct ul_pty *pty)
  	close(pty->slave);
  
  	if (pty->sigfd >= 0)
@@ -157,7 +169,7 @@ index 384906547..03a589439 100644
  	pty->slave = -1;
  	pty->master = -1;
  	pty->sigfd = -1;
-@@ -313,7 +412,6 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -314,7 +413,6 @@ void ul_pty_init_slave(struct ul_pty *pty)
  static int write_output(char *obuf, ssize_t bytes)
  {
  	DBG(IO, ul_debug(" writing output"));
@@ -165,7 +177,7 @@ index 384906547..03a589439 100644
  	if (write_all(STDOUT_FILENO, obuf, bytes)) {
  		DBG(IO, ul_debug("  writing output *failed*"));
  		return -errno;
-@@ -352,6 +450,7 @@ static int schedule_child_write(struct ul_pty *pty, char *buf, size_t bufsz, int
+@@ -353,6 +451,7 @@ static int schedule_child_write(struct ul_pty *pty, char *buf, size_t bufsz, int
   * The pty is usually faster than shell, so it's a good idea to wait until
   * the previous message has been already read by shell from slave before we
   * write to master. This is necessary especially for EOF situation when we can
@@ -173,7 +185,7 @@ index 384906547..03a589439 100644
   * send EOF to master before shell is fully initialized, to workaround this
   * problem we wait until slave is empty. For example:
   *
-@@ -417,9 +516,13 @@ static int flush_child_buffers(struct ul_pty *pty, int *anything)
+@@ -418,9 +517,13 @@ static int flush_child_buffers(struct ul_pty *pty, int *anything)
  out:
  	/* without sync write_output() will write both input &
  	 * shell output that looks like double echoing */
@@ -189,7 +201,7 @@ index 384906547..03a589439 100644
  	if (anything)
  		*anything = any;
  	return rc;
-@@ -677,8 +780,13 @@ int ul_pty_proxy_master(struct ul_pty *pty)
+@@ -680,8 +783,13 @@ int ul_pty_proxy_master(struct ul_pty *pty)
  
  		/* error */
  		if (ret < 0) {

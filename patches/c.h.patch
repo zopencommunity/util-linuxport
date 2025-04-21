@@ -1,0 +1,37 @@
+diff --git a/include/c.h b/include/c.h
+index dcb2d683c..5bc3ff933 100644
+--- a/include/c.h
++++ b/include/c.h
+@@ -260,7 +260,7 @@ prog_inv_sh_nm_from_file(char *f, char stripext)
+ 
+ #ifndef HAVE_ERR_H
+ static inline void __attribute__ ((__format__ (__printf__, 4, 5)))
+-errmsg(char doexit, int excode, char adderr, const char *fmt, ...)
++error_msg(char doexit, int excode, char adderr, const char *fmt, ...)
+ {
+ 	fprintf(stderr, "%s: ", program_invocation_short_name);
+ 	if (fmt != NULL) {
+@@ -279,19 +279,19 @@ errmsg(char doexit, int excode, char adderr, const char *fmt, ...)
+ }
+ 
+ #ifndef HAVE_ERR
+-# define err(E, FMT...) errmsg(1, E, 1, FMT)
++# define err(E, FMT...) error_msg(1, E, 1, FMT)
+ #endif
+ 
+ #ifndef HAVE_ERRX
+-# define errx(E, FMT...) errmsg(1, E, 0, FMT)
++# define errx(E, FMT...) error_msg(1, E, 0, FMT)
+ #endif
+ 
+ #ifndef HAVE_WARN
+-# define warn(FMT...) errmsg(0, 0, 1, FMT)
++# define warn(FMT...) error_msg(0, 0, 1, FMT)
+ #endif
+ 
+ #ifndef HAVE_WARNX
+-# define warnx(FMT...) errmsg(0, 0, 0, FMT)
++# define warnx(FMT...) error_msg(0, 0, 0, FMT)
+ #endif
+ #endif /* !HAVE_ERR_H */
+ 

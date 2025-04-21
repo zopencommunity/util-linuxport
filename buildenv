@@ -1,13 +1,13 @@
 # bump: util-linux-version /UTILLINUX_VERSION="(.*)"/ https://github.com/util-linux/util-linux.git|semver:*
-UTILLINUX_VERSION="2.39.3"
+UTILLINUX_VERSION="2.41"
 
 export ZOPEN_BUILD_LINE="STABLE"
 export ZOPEN_STABLE_URL="https://github.com/util-linux/util-linux.git"
-export ZOPEN_STABLE_DEPS="zoslib bison make coreutils sed grep automake autoconf perl libtool gettext xz tar gzip m4 getopt pkgconfig zoslib"
+export ZOPEN_STABLE_DEPS="zoslib bison make coreutils sed grep automake autoconf perl libtool gettext xz tar gzip m4 getopt pkgconfig zoslib flex"
 export ZOPEN_STABLE_TAG="v$UTILLINUX_VERSION"
 export ZOPEN_CATEGORIES="core"
 export ZOPEN_BOOTSTRAP="./autogen.sh"
-export ZOPEN_EXTRA_CONFIGURE_OPTS="--disable-all-programs --enable-ul --enable-whereis --enable-uuidgen --enable-libuuid --enable-scriptutils --without-util"
+export ZOPEN_EXTRA_CONFIGURE_OPTS="--disable-all-programs --enable-ul --enable-whereis --enable-uuidgen --enable-libuuid --enable-scriptutils --enable-hexdump --without-util"
 export ZOPEN_COMP="CLANG"
 export NCURSES6_CONFIG="avoid"
 export ZOPEN_MAKE_OPTS="LIBS=\"\$LIBS\""
