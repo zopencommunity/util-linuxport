@@ -1,5 +1,5 @@
 diff --git a/configure.ac b/configure.ac
-index a5d910204..d2f706739 100644
+index a5d9102..10d9829 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -936,11 +936,10 @@ AC_ARG_WITH([util], AS_HELP_STRING([--without-util], [compile without libutil]),
@@ -33,5 +33,14 @@ index a5d910204..d2f706739 100644
 -UL_REQUIRES_HAVE([scriptlive], [pty], [openpty function (libutil)])
 +UL_REQUIRES_HAVE([scriptlive], [pty], [openpty function (zoslib)])
  AM_CONDITIONAL([BUILD_SCRIPTLIVE], [test "x$build_scriptlive" = xyes])
+ 
+ 
+@@ -2351,7 +2350,7 @@ AC_ARG_ENABLE([kill],
+   [], [UL_DEFAULT_ENABLE([kill], [check])]
+ )
+ UL_BUILD_INIT([kill])
+-UL_REQUIRES_LINUX([kill])
++#UL_REQUIRES_LINUX([kill])
+ AM_CONDITIONAL([BUILD_KILL], [test "x$build_kill" = xyes])
  
  
