@@ -11,96 +11,10 @@ index af54197b3..ff12af9ae 100644
   * Callbacks -- the first argument is always callback data, see
   * ul_pty_set_callback_data().
 diff --git a/lib/pty-session.c b/lib/pty-session.c
-index 815264d1a..b9bda0c70 100644
+index 815264d1a..c7b56c5ab 100644
 --- a/lib/pty-session.c
 +++ b/lib/pty-session.c
-@@ -43,6 +43,85 @@ UL_DEBUG_DEFINE_MASKNAMES(ulpty) = UL_DEBUG_EMPTY_MASKNAMES;
- #define UL_DEBUG_CURRENT_MASK   UL_DEBUG_MASK(ulpty)
- #include "debugobj.h"
- 
-+
-+#ifdef __MVS__
-+
-+static int signal_pipe[2] = {-1, -1};
-+
-+void sigHandler(int signo, siginfo_t *info, void *ucontext) {
-+    struct signalfd_siginfo siginfo;
-+
-+    memset(&siginfo, 0, sizeof(struct signalfd_siginfo));
-+    siginfo.ssi_signo = signo;
-+    siginfo.ssi_code = info->si_code;
-+    siginfo.ssi_pid = info->si_pid;
-+    siginfo.ssi_uid = info->si_uid;
-+    siginfo.ssi_errno = info->si_errno;
-+    siginfo.ssi_status = info->si_status;
-+    siginfo.ssi_band = info->si_band;
-+
-+
-+    // Write the signal info to the pipe's write end
-+    if (write(signal_pipe[1], &siginfo, sizeof(struct signalfd_siginfo)) == -1) {
-+        perror("write");
-+    }
-+}
-+
-+int signalfd(int fd, const sigset_t *mask, int flags)
-+{
-+	if (pipe(signal_pipe) == -1) {
-+                perror("pipe");
-+                return -1;
-+        }
-+
-+	if(flags & SFD_CLOEXEC)
-+	{
-+                // Set the FD_CLOEXEC flag on both ends of the pipe
-+                if (fcntl(signal_pipe[0], F_SETFD, FD_CLOEXEC) == -1) {
-+                        perror("fcntl(pipefd[0], FD_CLOEXEC)");
-+			goto error;
-+        	}
-+        	if (fcntl(signal_pipe[1], F_SETFD, FD_CLOEXEC) == -1) {
-+        		perror("fcntl(pipefd[1], FD_CLOEXEC)");
-+			goto error;
-+    		}
-+	}
-+	
-+  
-+       sigprocmask(SIG_UNBLOCK, mask, NULL);
-+
-+       struct sigaction sa;
-+       memset(&sa, 0, sizeof(sa));
-+       sa.sa_flags = SA_SIGINFO;   // Enable additional signal information
-+       sa.sa_sigaction = sigHandler;  // Set our custom handler 
-+	
-+	for (int signo = 1; signo < 36; signo++) {
-+                if (sigismember(mask, signo)) {
-+    			
-+                        if (sigaction(signo, &sa, NULL) == -1) {
-+                        	perror("sigaction");
-+			}
-+                }
-+        }
-+
-+        return signal_pipe[0];
-+
-+error:
-+        signalfd_close(signal_pipe[0]);
-+	return -1;
-+
-+}
-+
-+int signalfd_close(int fd)
-+{
-+    (void)fd;
-+    if (signal_pipe[0] != -1) close(signal_pipe[0]);
-+    if (signal_pipe[1] != -1) close(signal_pipe[1]);
-+    signal_pipe[0] = signal_pipe[1] = -1;
-+}
-+
-+#endif
-+
- void ul_pty_init_debug(int mask)
- {
- 	if (ulpty_debug_mask)
-@@ -149,7 +228,13 @@ void ul_pty_set_mainloop_time(struct ul_pty *pty, struct timeval *tv)
+@@ -149,7 +149,13 @@ void ul_pty_set_mainloop_time(struct ul_pty *pty, struct timeval *tv)
  static void pty_signals_cleanup(struct ul_pty *pty)
  {
  	if (pty->sigfd != -1)
@@ -114,7 +28,7 @@ index 815264d1a..b9bda0c70 100644
  	pty->sigfd = -1;
  
  	/* restore original setting */
-@@ -182,7 +267,9 @@ int ul_pty_setup(struct ul_pty *pty)
+@@ -182,7 +188,9 @@ int ul_pty_setup(struct ul_pty *pty)
  			attrs.c_lflag |= ECHO;
  		else
  			attrs.c_lflag &= ~ECHO;
@@ -125,7 +39,7 @@ index 815264d1a..b9bda0c70 100644
  		ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&pty->win);
  		/* create master+slave */
  		rc = openpty(&pty->master, &pty->slave, NULL, &attrs, &pty->win);
-@@ -206,6 +293,10 @@ int ul_pty_setup(struct ul_pty *pty)
+@@ -206,6 +214,10 @@ int ul_pty_setup(struct ul_pty *pty)
  		else
  			attrs.c_lflag &= ~ECHO;
  
@@ -136,7 +50,7 @@ index 815264d1a..b9bda0c70 100644
  		tcsetattr(pty->slave, TCSANOW, &attrs);
  	}
  
-@@ -283,6 +374,7 @@ int ul_pty_chownmod_slave(struct ul_pty *pty, uid_t uid, gid_t gid, mode_t mode)
+@@ -283,6 +295,7 @@ int ul_pty_chownmod_slave(struct ul_pty *pty, uid_t uid, gid_t gid, mode_t mode)
  	return 0;
  }
  
@@ -144,7 +58,7 @@ index 815264d1a..b9bda0c70 100644
  /* call me in child process */
  void ul_pty_init_slave(struct ul_pty *pty)
  {
-@@ -290,7 +382,9 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -290,7 +303,9 @@ void ul_pty_init_slave(struct ul_pty *pty)
  
  	setsid();
  
@@ -154,7 +68,7 @@ index 815264d1a..b9bda0c70 100644
  	close(pty->master);
  
  	dup2(pty->slave, STDIN_FILENO);
-@@ -300,8 +394,13 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -300,8 +315,13 @@ void ul_pty_init_slave(struct ul_pty *pty)
  	close(pty->slave);
  
  	if (pty->sigfd >= 0)
@@ -169,7 +83,7 @@ index 815264d1a..b9bda0c70 100644
  	pty->slave = -1;
  	pty->master = -1;
  	pty->sigfd = -1;
-@@ -314,7 +413,6 @@ void ul_pty_init_slave(struct ul_pty *pty)
+@@ -314,7 +334,6 @@ void ul_pty_init_slave(struct ul_pty *pty)
  static int write_output(char *obuf, ssize_t bytes)
  {
  	DBG(IO, ul_debug(" writing output"));
@@ -177,7 +91,7 @@ index 815264d1a..b9bda0c70 100644
  	if (write_all(STDOUT_FILENO, obuf, bytes)) {
  		DBG(IO, ul_debug("  writing output *failed*"));
  		return -errno;
-@@ -353,6 +451,7 @@ static int schedule_child_write(struct ul_pty *pty, char *buf, size_t bufsz, int
+@@ -353,6 +372,7 @@ static int schedule_child_write(struct ul_pty *pty, char *buf, size_t bufsz, int
   * The pty is usually faster than shell, so it's a good idea to wait until
   * the previous message has been already read by shell from slave before we
   * write to master. This is necessary especially for EOF situation when we can
@@ -185,7 +99,7 @@ index 815264d1a..b9bda0c70 100644
   * send EOF to master before shell is fully initialized, to workaround this
   * problem we wait until slave is empty. For example:
   *
-@@ -418,9 +517,13 @@ static int flush_child_buffers(struct ul_pty *pty, int *anything)
+@@ -418,9 +438,13 @@ static int flush_child_buffers(struct ul_pty *pty, int *anything)
  out:
  	/* without sync write_output() will write both input &
  	 * shell output that looks like double echoing */
@@ -201,7 +115,7 @@ index 815264d1a..b9bda0c70 100644
  	if (anything)
  		*anything = any;
  	return rc;
-@@ -680,8 +783,13 @@ int ul_pty_proxy_master(struct ul_pty *pty)
+@@ -680,8 +704,13 @@ int ul_pty_proxy_master(struct ul_pty *pty)
  
  		/* error */
  		if (ret < 0) {
