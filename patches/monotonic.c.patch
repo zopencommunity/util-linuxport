@@ -1,0 +1,13 @@
+diff --git a/lib/monotonic.c b/lib/monotonic.c
+index 63feec0..6e7443d 100644
+--- a/lib/monotonic.c
++++ b/lib/monotonic.c
+@@ -5,6 +5,8 @@
+  * No copyright is claimed.  This code is in the public domain; do with
+  * it what you wish.
+  */
++
++#undef HAVE_SYSINFO
+ #include <time.h>
+ #include <signal.h>
+ #ifdef HAVE_SYSINFO
