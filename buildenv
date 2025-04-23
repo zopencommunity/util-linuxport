@@ -14,6 +14,7 @@ export ZOPEN_COMP="CLANG"
 export NCURSES6_CONFIG="avoid"
 export ZOPEN_MAKE_OPTS="LIBS=\"\$LIBS\""
 export ZOPEN_CHECK_OPTS="check LIBS=\"\$LIBS\""
+export ZOPEN_SYSTEM_PREREQ="zos25"
 
 zopen_check_results()
 {
