@@ -34,3 +34,21 @@ zopen_get_version()
 {
   echo $UTILLINUX_VERSION
 }
+
+zopen_post_install()
+{
+mkdir -p $ZOPEN_INSTALL_DIR/altbin
+# Add zot prefix to all colliding tools and manpages in bin/ and create symlinks
+find $1/bin -type f -exec sh -c '
+for file in "$@"; do
+  dir=$(dirname "$file")
+  base=$(basename "$file")
+
+  if [ -f "/bin/$base" ]; then
+    mv "$file" "$dir/zot$base"
+    ln -s "../bin/zot$base" "$ZOPEN_INSTALL_DIR/altbin/$base"
+  fi
+done
+' sh {} \;
+
+}
