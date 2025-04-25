@@ -7,7 +7,7 @@ export ZOPEN_STABLE_DEPS="zoslib bison make coreutils sed grep automake autoconf
 export ZOPEN_STABLE_TAG="v$UTILLINUX_VERSION"
 export ZOPEN_CATEGORIES="core"
 export ZOPEN_BOOTSTRAP="./autogen.sh"
-export ZOPEN_EXTRA_CONFIGURE_OPTS="--disable-all-programs --enable-ul --enable-whereis --enable-uuidgen --enable-libuuid --enable-scriptutils --enable-hexdump --enable-more --enable-kill --enable-libsmartcols --enable-column --enable-setsid --without-util"
+export ZOPEN_EXTRA_CONFIGURE_OPTS="--disable-all-programs --enable-ul --enable-whereis --enable-uuidgen --enable-libuuid --enable-scriptutils --enable-hexdump --enable-more --enable-kill --enable-libsmartcols --enable-column --enable-setsid --without-util --enable-line --enable-pg --enable-rename"
 export ZOPEN_EXTRA_CFLAGS="-mzos-target=zosv2r5 -D_POSIX_C_SOURCE=200809L"
 export ZOPEN_EXTRA_CPPFLAGS="-mzos-target=zosv2r5 -D_POSIX_C_SOURCE=200809L"
 export ZOPEN_COMP="CLANG"
