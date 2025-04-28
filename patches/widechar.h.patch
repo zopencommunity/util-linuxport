@@ -1,0 +1,13 @@
+diff --git a/include/widechar.h b/include/widechar.h
+index bbccc88..73440d2 100644
+--- a/include/widechar.h
++++ b/include/widechar.h
+@@ -12,6 +12,8 @@
+ # include <wchar.h>
+ # include <wctype.h>
+ 
++# define wcsdup strdup
++
+ #else /* !HAVE_WIDECHAR */
+ 
+ # include <ctype.h>

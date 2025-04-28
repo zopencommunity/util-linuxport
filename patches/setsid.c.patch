@@ -1,0 +1,15 @@
+diff --git a/sys-utils/setsid.c b/sys-utils/setsid.c
+index 0a7fdbe..b1ffced 100644
+--- a/sys-utils/setsid.c
++++ b/sys-utils/setsid.c
+@@ -118,8 +118,10 @@ int main(int argc, char **argv)
+ 		/* cannot happen */
+ 		err(EXIT_FAILURE, _("setsid failed"));
+ 
++#ifndef __MVS__
+ 	if (ctty && ioctl(STDIN_FILENO, TIOCSCTTY, 1))
+ 		err(EXIT_FAILURE, _("failed to set the controlling terminal"));
++#endif
+ 	execvp(argv[optind], argv + optind);
+ 	errexec(argv[optind]);
+ }
