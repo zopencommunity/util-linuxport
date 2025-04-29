@@ -1,0 +1,15 @@
+diff --git a/term-utils/write.c b/term-utils/write.c
+index 3784f03..7267708 100644
+--- a/term-utils/write.c
++++ b/term-utils/write.c
+@@ -72,6 +72,10 @@
+ #include "ttyutils.h"
+ #include "xalloc.h"
+ 
++#ifdef __MVS__
++#define _PATH_UTMP "/etc/utmpx"
++#endif
++
+ static volatile sig_atomic_t signal_received = 0;
+ 
+ struct write_control {
