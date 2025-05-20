@@ -33,7 +33,7 @@ index c42c9da..119a920 100644
 +#define EX_CANTCREAT	73	/* can't create (user) output file */
 +#define EX_IOERR	74	/* input/output error */
 +#define EX_TEMPFAIL	75	/* temp failure; user is invited to retry */
-+#define EX_PROTOCOL	76	/* remote error in protocol */
++#define EX_PROTOCOL	75	/* remote error in protocol */
 +#define EX_NOPERM	77	/* permission denied */
 +#define EX_CONFIG	78	/* configuration error */
 +
