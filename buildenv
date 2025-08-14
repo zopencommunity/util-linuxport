@@ -1,5 +1,5 @@
 # bump: util-linux-version /UTILLINUX_VERSION="(.*)"/ https://github.com/util-linux/util-linux.git|semver:*
-UTILLINUX_VERSION="2.41"
+UTILLINUX_VERSION="2.41.1"
 
 export ZOPEN_BUILD_LINE="STABLE"
 export ZOPEN_STABLE_URL="https://github.com/util-linux/util-linux.git"
@@ -9,7 +9,7 @@ export ZOPEN_CATEGORIES="core"
 export ZOPEN_BOOTSTRAP="./autogen.sh"
 export ZOPEN_EXTRA_CONFIGURE_OPTS="--disable-all-programs --enable-ul --enable-whereis --enable-uuidgen --enable-libuuid --enable-scriptutils --enable-hexdump --enable-more --enable-kill --enable-libsmartcols --enable-column --enable-setsid --without-util --enable-line --enable-pg --enable-rename --enable-cal --enable-flock --enable-write --enable-renice"
 export ZOPEN_EXTRA_CFLAGS="-mzos-target=zosv2r5 -D_POSIX_C_SOURCE=200809L"
-export ZOPEN_EXTRA_CPPFLAGS="-mzos-target=zosv2r5 -D_POSIX_C_SOURCE=200809L"
+export ZOPEN_EXTRA_CPPFLAGS="-mzos-target=zosv2r5 -D__XPLAT=1 -D_POSIX_C_SOURCE=200809L"
 export ZOPEN_COMP="CLANG"
 export NCURSES6_CONFIG="avoid"
 export ZOPEN_MAKE_OPTS="LIBS=\"\$LIBS\""
@@ -28,6 +28,17 @@ zopen_check_results()
   echo "totalTests:1"
   echo "expectedFailures:0"
   echo "expectedTotalTests:1"
+}
+
+zopen_append_to_env() {
+cat <<ZZ
+if [ ! -z "\$ZOPEN_IN_ZOPEN_BUILD" ]; then
+  export ZOPEN_EXTRA_CFLAGS="\${ZOPEN_EXTRA_CFLAGS} -I\$PWD/include"
+  export ZOPEN_EXTRA_CXXFLAGS="\${ZOPEN_EXTRA_CXXFLAGS} -I\$PWD/include"
+  export ZOPEN_EXTRA_LDFLAGS="\${ZOPEN_EXTRA_LDFLAGS} -L\$PWD/lib"
+  export ZOPEN_EXTRA_LIBS="\${ZOPEN_EXTRA_LIBS} -lsmartcols -luuid"
+fi
+ZZ
 }
 
 zopen_get_version()
