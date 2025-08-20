@@ -3,7 +3,7 @@ UTILLINUX_VERSION="2.41.1"
 
 export ZOPEN_BUILD_LINE="STABLE"
 export ZOPEN_STABLE_URL="https://github.com/util-linux/util-linux.git"
-export ZOPEN_STABLE_DEPS="zoslib bison make coreutils sed grep automake autoconf perl libtool gettext xz tar gzip m4 getopt pkgconfig zoslib flex"
+export ZOPEN_STABLE_DEPS="zoslib bison make coreutils sed grep automake autoconf perl libtool gettext xz tar gzip m4 getopt pkgconfig zoslib flex ncurses"
 export ZOPEN_STABLE_TAG="v$UTILLINUX_VERSION"
 export ZOPEN_CATEGORIES="core"
 export ZOPEN_BOOTSTRAP="./autogen.sh"
