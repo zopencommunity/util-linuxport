@@ -1,0 +1,36 @@
+diff --git a/lib/path.c b/lib/path.c
+index 42a33ff..36242f6 100644
+--- a/lib/path.c
++++ b/lib/path.c
+@@ -501,6 +501,31 @@ FILE *ul_path_fopenf(struct path_cxt *pc, const char *mode, const char *path, ..
+ 	return f;
+ }
+ 
++static  DIR *fdopendir(int fd)
++{
++        DIR *dir;
++        struct stat st;
++
++        if (fstat(fd, &st) < 0) {
++                return 0;
++        }
++        if (fcntl(fd, F_GETFL) & O_PATH) {
++                errno = EBADF;
++                return 0;
++        }
++        if (!S_ISDIR(st.st_mode)) {
++                errno = ENOTDIR;
++                return 0;
++        }
++        if (!(dir = calloc(1, sizeof *dir))) {
++                return 0;
++        }
++
++        fcntl(fd, F_SETFD, FD_CLOEXEC);
++        dir->dd_fd = fd;
++        return dir;
++}
++
+ /*
+  * Open directory @path in read-only mode. If the path is NULL then duplicate FD
+  * to the directory addressed by @pc.
